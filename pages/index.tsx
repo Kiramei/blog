@@ -236,7 +236,7 @@ const Home = () => {
       <main >
         <Layout>
           <Header className={styles.headerBox} >
-            <Image alt='' className={styles.logo} src='/blog/top_.png' width={70} height={70}></Image>
+            <Image alt='' className={styles.logo} src='/blog/top.png' width={70} height={70}></Image>
             <div className={styles.logoText}>
               <div className={styles.headerText} onClick={HomeClick}>Kiramei&apos;s Blog</div>
             </div>
