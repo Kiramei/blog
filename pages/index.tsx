@@ -1,123 +1,261 @@
+/* eslint-disable react/no-children-prop */
 import Head from 'next/head'
 import Image from 'next/image'
-import { Inter } from '@next/font/google'
 import styles from '../styles/Home.module.css'
+import { Card, Divider, Layout, List, Pagination, PaginationProps } from 'antd'
+import { InfoCircleOutlined, LoadingOutlined } from '@ant-design/icons'
+import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/router'
+import dynamic from 'next/dynamic'
+import Page404 from './404'
+import ParticleNetwork from '../components/ParticleNetwork'
 
-const inter = Inter({ subsets: ['latin'] })
 
-export default function Home() {
+const { Header, Content } = Layout;
+
+interface PassageInfo {
+  title: string
+  description: string
+  pid: number
+}
+let pItemJson: PassageInfo[][] = [[]];
+let othItemJson: PassageInfo[][] = [[]];
+const Home = () => {
+  const [psgList, setPsgList] = useState<PassageInfo[]>([]);
+  const [othList, setOthList] = useState<PassageInfo[]>([]);
+  const [showTitie, setShowTitle] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [forDefault, setForDefault] = useState(1);
+  const [forDefault_, setForDefault_] = useState(1);
+  const dataLength = useRef(0)
+  const otherLength = useRef(0)
+  const [title, setTitle] = useState('');
+  const router = useRouter()
+
+  const loadingIcon = <LoadingOutlined style={{ fontSize: 24 }} spin />;
+
+  const otherClick = () => {
+    setShowTitle(true);
+    setShowHistory(true);
+    setTitle('Other');
+  }
+
+  const HomeClick = () => {
+    setShowTitle(false);
+    setShowHistory(false);
+    router.push('/')
+  }
+
+  const synTitle = () => {
+    if (!pItemJson) return;
+    const q = router.asPath.indexOf('pid') === -1 ? undefined : router.asPath.substring(6);
+    if (q) {
+      let at: string;
+      const queryId = parseInt(q);
+      if (queryId > 1000)
+        for (let i = 0; i < othItemJson.length; i++) {
+          console.log(othItemJson)
+          const e = othItemJson[i];
+          if (at = e.find((e: PassageInfo) => e.pid === queryId).title) break;
+        }
+      else
+        for (let i = 0; i < pItemJson.length; i++) {
+          const e = pItemJson[i];
+          if (at = e.find((e: PassageInfo) => e.pid === queryId).title) break;
+        }
+      if (at) {
+        setTitle(at)
+        setShowTitle(true);
+      }
+    }
+  }
+
+  const fetchData = () => {
+    fetch('/psgLst.json').then(res => res.json()).then((body) => {
+      pItemJson = body.content
+      dataLength.current = body.total
+      setPsgList(pItemJson[0])
+    }).then(() => {
+      fetch('/othLst.json').then(res => res.json()).then((body) => {
+        othItemJson = body.content
+        otherLength.current = body.total
+        setOthList(othItemJson[0])
+        synTitle();
+      })
+    })
+  }
+
+  const reinFlag = useRef(false)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (reinFlag) fetchData(); else reinFlag.current = true }, []);
+
+  const titleBox = <span style={{ marginLeft: 10 }}>{title}</span>
+
+  const onChange: PaginationProps['onChange'] = (page) => {
+    setPsgList([])
+    setTimeout(() => setPsgList(pItemJson[page - 1]), 0);
+    setForDefault(page)
+  }
+
+  const onChange_: PaginationProps['onChange'] = (page) => {
+    setOthList([])
+    setTimeout(() => setOthList(othItemJson[page - 1]), 200);
+    setForDefault_(page)
+  }
+
+  const LoadingComponent =
+    <div style={{
+      height: 'calc(100vh - 64px)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center'
+    }}>
+      <div style={{
+        width: 50,
+        height: 50,
+        borderRadius: 5,
+        background: '#fff',
+        justifyContent: 'center',
+        alignItems: 'center',
+        display: 'flex'
+      }}>
+        {loadingIcon}
+      </div>
+    </div>
+
+  const PassageList = () =>
+    <div id='psgList' style={{
+      paddingTop: 25,
+      paddingBottom: 35,
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      height: 'calc(100vh - 64px)'
+    }}>
+      <List
+        grid={{ gutter: 16, column: 1 }}
+        dataSource={psgList}
+        renderItem={(item) => (
+          <List.Item style={{
+            display: 'flex',
+            justifyContent: 'center'
+          }}
+          >
+            <Card
+              title={item.title}
+              className={styles.cardItem}
+              hoverable={true}
+              onClick={() => {
+                router.push(`/?pid=${item.pid}`)
+                setTitle(item.title)
+                setShowTitle(true)
+              }}
+            >
+              {item.description}
+            </Card>
+          </List.Item>
+        )}
+      />
+      <Pagination showQuickJumper defaultCurrent={forDefault} total={dataLength.current} onChange={onChange}
+        style={{ display: 'flex', justifyContent: 'center', marginTop: 25 }} />
+    </div>
+
+
+  const HistoryList =
+    <div id='hisList' style={{
+      paddingTop: 25,
+      paddingLeft: 25,
+      paddingRight: 25,
+      paddingBottom: 25,
+      overflow: 'auto',
+      height: 'calc(100vh - 64px)'
+    }}>
+      <List
+        grid={{ gutter: 10, xxl: 4, xl: 4, lg: 4, md: 3, sm: 2, xs: 1 }}
+        dataSource={othList}
+        renderItem={(item) => (
+          <List.Item style={{
+            display: 'flex',
+            justifyContent: 'center'
+          }}>
+            <Card
+              title={item.title}
+              style={{
+                marginTop: 10,
+                width: '100%'
+              }}
+              onClick={() => {
+                router.push(`/?pid=${item.pid}`)
+                setTitle(item.title)
+                setShowTitle(true)
+                setShowHistory(false)
+              }}
+              hoverable={true}
+            >
+              {item.description}
+            </Card>
+          </List.Item>
+        )}
+      />
+      <Pagination defaultPageSize={16} showSizeChanger={false} defaultCurrent={forDefault_} total={otherLength.current} onChange={onChange_}
+        style={{ display: 'flex', justifyContent: 'center', marginTop: 25 }} />
+    </div>
+  const MainLogic = () => {
+    let result: JSX.Element;
+    const query = router.query.pid;
+    if (showHistory)
+      result = HistoryList
+    else if (query) {
+      const queryId = parseInt(router.query.pid.toString());
+      if ((queryId <= dataLength.current && queryId >= 1)
+        || (queryId >= 1001 && queryId <= otherLength.current+1000)) {
+        const ImportPage = dynamic<JSX.Element>(
+          import(`./passages/P${queryId}`), {
+          loading: () => LoadingComponent
+        })
+        result = <ImportPage key={''} type={undefined} props={undefined} />
+      }
+      else {
+        if (dataLength.current === 0) return result;
+        result = <Page404 />
+      }
+    }
+    else {
+      result = < PassageList />
+    }
+    return result;
+  }
+
   return (
     <>
       <Head>
-        <title>Create Next App</title>
-        <meta name="description" content="Generated by create next app" />
+        <title>Kiramei&apos;s Blog</title>
+        <meta name="description" content="Kiramei's blog is here" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/fav.ico" />
       </Head>
-      <main className={styles.main}>
-        <div className={styles.description}>
-          <p>
-            Get started by editing&nbsp;
-            <code className={styles.code}>pages/index.tsx</code>
-          </p>
-          <div>
-            <a
-              href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              By{' '}
-              <Image
-                src="/vercel.svg"
-                alt="Vercel Logo"
-                className={styles.vercelLogo}
-                width={100}
-                height={24}
-                priority
-              />
-            </a>
-          </div>
-        </div>
-
-        <div className={styles.center}>
-          <Image
-            className={styles.logo}
-            src="/next.svg"
-            alt="Next.js Logo"
-            width={180}
-            height={37}
-            priority
-          />
-          <div className={styles.thirteen}>
-            <Image
-              src="/thirteen.svg"
-              alt="13"
-              width={40}
-              height={31}
-              priority
-            />
-          </div>
-        </div>
-
-        <div className={styles.grid}>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Docs <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Find in-depth information about Next.js features and&nbsp;API.
-            </p>
-          </a>
-
-          <a
-            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Learn <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Learn about Next.js in an interactive course with&nbsp;quizzes!
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Templates <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Discover and deploy boilerplate example Next.js&nbsp;projects.
-            </p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <h2 className={inter.className}>
-              Deploy <span>-&gt;</span>
-            </h2>
-            <p className={inter.className}>
-              Instantly deploy your Next.js site to a shareable URL
-              with&nbsp;Vercel.
-            </p>
-          </a>
-        </div>
+      <main >
+        <Layout>
+          <Header className={styles.headerBox} >
+            <Image alt='' className={styles.logo} src='/top.png' width={70} height={70}></Image>
+            <div className={styles.logoText}>
+              <div className={styles.headerText} onClick={HomeClick}>Kiramei&apos;s Blog</div>
+            </div>
+            {showTitie ? <div className={styles.logoText} id='titleText'>
+              <div className={styles.headerText}>{'> '}{titleBox}</div> </div> : <></>}
+            <div className={styles.history} onClick={otherClick} >
+              <div className={styles.headerText}>
+                <InfoCircleOutlined />
+              </div>
+            </div>
+          </Header>
+          <Content >
+            <ParticleNetwork id="ptn" />
+            <MainLogic />
+          </Content>
+        </Layout>
       </main>
     </>
   )
 }
+
+export default Home;
