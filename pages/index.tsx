@@ -2,7 +2,7 @@
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
-import { Card, Divider, Layout, List, Pagination, PaginationProps } from 'antd'
+import { Card, Layout, List, Pagination, PaginationProps } from 'antd'
 import { InfoCircleOutlined, LoadingOutlined } from '@ant-design/icons'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
@@ -71,7 +71,7 @@ const Home = () => {
   }
 
   const fetchData = () => {
-    fetch('/psgLst.json').then(res => res.json()).then((body) => {
+    fetch('/blog/psgLst.json').then(res => res.json()).then((body) => {
       pItemJson = body.content
       dataLength.current = body.total
       setPsgList(pItemJson[0])
@@ -231,12 +231,12 @@ const Home = () => {
         <title>Kiramei&apos;s Blog</title>
         <meta name="description" content="Kiramei's blog is here" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/fav.ico" />
+        <link rel="icon" href="/blog/favicon.ico" />
       </Head>
       <main >
         <Layout>
           <Header className={styles.headerBox} >
-            <Image alt='' className={styles.logo} src='/top.png' width={70} height={70}></Image>
+            <Image alt='' className={styles.logo} src='/blog/top_.png' width={70} height={70}></Image>
             <div className={styles.logoText}>
               <div className={styles.headerText} onClick={HomeClick}>Kiramei&apos;s Blog</div>
             </div>
