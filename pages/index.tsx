@@ -76,7 +76,7 @@ const Home = () => {
       dataLength.current = body.total
       setPsgList(pItemJson[0])
     }).then(() => {
-      fetch('/othLst.json').then(res => res.json()).then((body) => {
+      fetch('/blog/othLst.json').then(res => res.json()).then((body) => {
         othItemJson = body.content
         otherLength.current = body.total
         setOthList(othItemJson[0])
